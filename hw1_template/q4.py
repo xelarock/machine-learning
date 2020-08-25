@@ -1,3 +1,6 @@
+# THIS CODE IS MY OWN WORK, IT WAS WRITTEN WITHOUT CONSULTING CODE WRITTEN BY OTHER STUDENTS.
+# Alex Welsh
+
 import argparse
 import numpy as np
 import pandas as pd

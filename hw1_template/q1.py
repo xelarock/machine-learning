@@ -1,3 +1,6 @@
+# THIS CODE IS MY OWN WORK, IT WAS WRITTEN WITHOUT CONSULTING CODE WRITTEN BY OTHER STUDENTS.
+# Alex Welsh
+
 import numpy as np
 import numpy.testing as npt
 import time
@@ -13,8 +16,8 @@ def gen_random_samples():
     sample : 1d array of size 5 million
         An array of 5 million random samples
     """
-    ## TODO FILL IN
-    return None
+    samples = np.random.rand(5000000)
+    return samples
 
 
 def sum_squares_for(samples):
@@ -35,7 +38,11 @@ def sum_squares_for(samples):
     """
     timeElapse = 0
     ss = 0
-    ## TODO FILL IN
+    before = time.time()
+    for num in samples:
+        ss += (num * num)
+    after = time.time()
+    timeElapse = after - before
     return ss, timeElapse
 
 
@@ -57,7 +64,10 @@ def sum_squares_np(samples):
     """
     timeElapse = 0
     ss = 0
-    ## TODO FILL IN
+    before = time.time()
+    ss = np.dot(samples, samples)
+    after = time.time()
+    timeElapse = after - before
     return ss, timeElapse
 
 
