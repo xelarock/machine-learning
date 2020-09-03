@@ -4,10 +4,15 @@
 import argparse
 import numpy as np
 import pandas as pd
+import math
 
 
 class Knn(object):
     k = 0    # number of neighbors to use
+    trainSet = []
+    xTrain = []
+    yTrain = []
+    dist = []
 
     def __init__(self, k):
         """
@@ -35,7 +40,13 @@ class Knn(object):
         -------
         self : object
         """
-        # TODO do whatever you need
+        self.xTrain = xFeat.to_numpy()
+        self.yTrain = y.to_numpy()
+        # print()
+        col4 = np.zeros(len(self.xTrain))
+        #print(col4)
+        self.trainSet = np.column_stack((np.atleast_1d(self.yTrain), self.xTrain, np.empty(len(self.xTrain))))
+        #print(self.trainSet)
         return self
 
 
@@ -54,8 +65,45 @@ class Knn(object):
         yHat : 1d array or list with shape m
             Predicted class label per sample
         """
-        yHat = [] # variable to store the estimated class label
+        # dist = np.empty([1, len(self.trainSet)])
+        xFeat = xFeat.to_numpy()
+        # print("Feature ", xFeat[0][0], xFeat[0][1])
+        yHat = []  # variable to store the estimated class label
+        j = 0
+        for x1, x2 in xFeat:
+            i = 0
+            # print(x1, x2)
+            for row in self.xTrain:
+                # print(x1, x2, row[0], row[1])
+                # print("squared ", math.pow((x1 - x2), 2), math.pow((row[0] - row[1]), 2))
+                # print("added: ", math.pow((x1 - x2), 2) + math.pow((row[0] - row[1]), 2))
+                # print(math.sqrt(math.pow((x1 - row[0]), 2) + math.pow((x2 - row[1]), 2)))
+                self.trainSet[i][3] = math.sqrt(math.pow((x1 - row[0]), 2) + math.pow((x2 - row[1]), 2))
+                i += 1
+                # break
+            # print(self.trainSet)
+            output = self.trainSet[np.argsort(self.trainSet[:, 3])]
+            # print(self.trainSet)
+            voting = 0
+            # break
+            for sampleIndex in range(self.k):
+                # print("Sample ", sampleIndex, ": ", output[sampleIndex][0], " ", output[sampleIndex][3])
+                if output[sampleIndex][0] == 1.0:
+                    voting += 1
+                else:
+                    voting -= 1
+            if voting >= 0:
+                # print("append 1")
+                yHat.append([1])
+            else:
+                yHat.append([0])
+                # print("append 0")
+            j += 1
+            # break
+            #print()
+        # print(dist)
         # TODO
+        # print(yHat)
         return yHat
 
 
@@ -76,8 +124,12 @@ def accuracy(yHat, yTrue):
         The accuracy of the model
     """
     # TODO calculate the accuracy
+    # print(yTrue)
     acc = 0
-    return acc
+    for i in range(len(yHat)):
+        if yHat[i] == yTrue[i]:
+            acc += 1
+    return acc / len(yTrue)
 
 
 def main():
