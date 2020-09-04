@@ -4,8 +4,11 @@
 import argparse
 import numpy as np
 import pandas as pd
-
-import knn
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+from knn import Knn
+from knn import accuracy
+import matplotlib.pyplot as plt
 
 
 def standard_scale(xTrain, xTest):
@@ -29,8 +32,10 @@ def standard_scale(xTrain, xTest):
     xTest : nd-array with shape m x d
         Transformed test data using same process as training.
     """
-    # TODO FILL IN
-    return xTrain, xTest
+
+    stdsScale = StandardScaler()                                    # use the standard scaler to scale data
+    stdsScale.fit(xTrain)
+    return stdsScale.transform(xTrain), stdsScale.transform(xTest)
 
 
 def minmax_range(xTrain, xTest):
@@ -55,8 +60,9 @@ def minmax_range(xTrain, xTest):
     xTest : nd-array with shape m x d
         Transformed test data using same process as training.
     """
-    # TODO FILL IN
-    return xTrain, xTest
+    minmaxScaler = MinMaxScaler()                                   # use the minmax scaler to scale data
+    minmaxScaler.fit(xTrain)
+    return minmaxScaler.transform(xTrain), minmaxScaler.transform(xTest)
 
 
 def add_irr_feature(xTrain, xTest):
@@ -78,7 +84,15 @@ def add_irr_feature(xTrain, xTest):
     xTest : nd-array with shape m x (d+2)
         Test data with 2 new noisy Gaussian features
     """
-    # TODO FILL IN
+    irr1 = np.random.normal(0, 1, len(xTrain.index))            # create 2 set of random values from a normal
+    irr2 = np.random.normal(0, 1, len(xTrain.index))            # distribution with mean of 0 and std of 1.
+    xTrain["irr1"] = irr1                                       # add to training data
+    xTrain["irr2"] = irr2
+
+    irr1 = np.random.normal(0, 1, len(xTest.index))             # create 2 set of random values from a normal
+    irr2 = np.random.normal(0, 1, len(xTest.index))             # distribution with mean of 0 and std of 1.
+    xTest["irr1"] = irr1                                        # add to training data
+    xTest["irr2"] = irr2
     return xTrain, xTest
 
 
@@ -106,11 +120,11 @@ def knn_train_test(k, xTrain, yTrain, xTest, yTest):
     acc : float
         The accuracy of the trained knn model on the test data
     """
-    model = knn.Knn(k)
+    model = Knn(k)
     model.train(xTrain, yTrain['label'])
     # predict the test dataset
     yHatTest = model.predict(xTest)
-    return knn.accuracy(yHatTest, yTest['label'])
+    return accuracy(yHatTest, yTest['label'])
     
 
 def main():
@@ -139,7 +153,7 @@ def main():
     xTest = pd.read_csv(args.xTest)
     yTest = pd.read_csv(args.yTest)
 
-    # no preprocessing
+    # # no preprocessing
     acc1 = knn_train_test(args.k, xTrain, yTrain, xTest, yTest)
     print("Test Acc (no-preprocessing):", acc1)
     # preprocess the data using standardization scaling
@@ -154,6 +168,36 @@ def main():
     xTrainIrr, yTrainIrr = add_irr_feature(xTrain, xTest)
     acc4 = knn_train_test(args.k, xTrainIrr, yTrain, yTrainIrr, yTest)
     print("Test Acc (with irrelevant feature):", acc4)
+
+    # runs the KNN classifier with the three pre-processing options for K=1 to K.
+    results = np.empty([args.k, 4]) # test accuracy is recorded in this K x 4 array
+
+    for i in range(1, args.k + 1):      # loop through values of K from 1 to K
+        # no preprocessing
+        print("Starting K: ", i)
+        results[i - 1][0] = knn_train_test(i, xTrain, yTrain, xTest, yTest)
+        print("Test Acc (no-preprocessing):", results[i - 1][0])
+        # preprocess the data using standardization scaling
+        xTrainStd, xTestStd = standard_scale(xTrain, xTest)
+        results[i - 1][1] = knn_train_test(i, xTrainStd, yTrain, xTestStd, yTest)
+        print("Test Acc (standard scale):", results[i - 1][1])
+        # preprocess the data using min max scaling
+        xTrainMM, xTestMM = minmax_range(xTrain, xTest)
+        results[i - 1][2] = knn_train_test(i, xTrainMM, yTrain, xTestMM, yTest)
+        print("Test Acc (min max scale):", results[i - 1][2])
+        # add irrelevant features
+        xTrainIrr, yTrainIrr = add_irr_feature(xTrain, xTest)
+        results[i - 1][3] = knn_train_test(i, xTrainIrr, yTrain, yTrainIrr, yTest)
+        print("Test Acc (with irrelevant feature):", results[i - 1][3])
+        print(results)
+
+    # set up figure to display results of pre-processing with different values of K
+    plt.title("Training and Testing Accuracy for K-Nearest Neighbors Algorithm")
+    plt.xlabel("K value")
+    plt.ylabel("Percent accurate")
+    plt.plot([i for i in range(1, args.k + 1)], results)    # start plotting from 1 (default 0)
+    plt.legend(("No Pre-processing", "Standard Scaling", "Min-Max Scaling", "Irrelevant Features"))
+    plt.show()
 
 if __name__ == "__main__":
     main()

@@ -38,7 +38,7 @@ def sum_squares_for(samples):
     """
     timeElapse = 0
     ss = 0
-    before = time.time()
+    before = time.time()                    # times the process and uses a for loop to manually sum the squares
     for num in samples:
         ss += (num * num)
     after = time.time()
@@ -64,7 +64,7 @@ def sum_squares_np(samples):
     """
     timeElapse = 0
     ss = 0
-    before = time.time()
+    before = time.time()                    # times the process and uses numpy to computer the sum of squares
     ss = np.dot(samples, samples)
     after = time.time()
     timeElapse = after - before

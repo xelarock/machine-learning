@@ -5,14 +5,14 @@ import argparse
 import numpy as np
 import pandas as pd
 import math
+import matplotlib.pyplot as plt
 
 
 class Knn(object):
     k = 0    # number of neighbors to use
-    trainSet = []
-    xTrain = []
-    yTrain = []
-    dist = []
+    trainSet = []   # contains the classification, features, and distance
+    xTrain = []     # contains the features
+    yTrain = []     # contains the classifications
 
     def __init__(self, k):
         """
@@ -40,13 +40,16 @@ class Knn(object):
         -------
         self : object
         """
-        self.xTrain = xFeat.to_numpy()
-        self.yTrain = y.to_numpy()
-        # print()
-        col4 = np.zeros(len(self.xTrain))
-        #print(col4)
+        if type(xFeat) != np.ndarray:               # if the data isn't a numpy array, eg dataframe, convert to numpy
+            self.xTrain = xFeat.to_numpy()
+        else:
+            self.xTrain = xFeat
+        if type(y) != np.ndarray:
+            self.yTrain = y.to_numpy()
+        else:
+            self.yTrain = y
+        # set the train set columns to [1 x classification, d x features, 1 x placeholder for distances]
         self.trainSet = np.column_stack((np.atleast_1d(self.yTrain), self.xTrain, np.empty(len(self.xTrain))))
-        #print(self.trainSet)
         return self
 
 
@@ -65,45 +68,30 @@ class Knn(object):
         yHat : 1d array or list with shape m
             Predicted class label per sample
         """
-        # dist = np.empty([1, len(self.trainSet)])
-        xFeat = xFeat.to_numpy()
-        # print("Feature ", xFeat[0][0], xFeat[0][1])
+        if type(xFeat) != np.ndarray:           # if the data isn't a numpy array, eg dataframe, convert to numpy
+            xFeat = xFeat.to_numpy()
         yHat = []  # variable to store the estimated class label
         j = 0
-        for x1, x2 in xFeat:
+        for xrow in xFeat:                      # for each row of test data
             i = 0
-            # print(x1, x2)
-            for row in self.xTrain:
-                # print(x1, x2, row[0], row[1])
-                # print("squared ", math.pow((x1 - x2), 2), math.pow((row[0] - row[1]), 2))
-                # print("added: ", math.pow((x1 - x2), 2) + math.pow((row[0] - row[1]), 2))
-                # print(math.sqrt(math.pow((x1 - row[0]), 2) + math.pow((x2 - row[1]), 2)))
-                self.trainSet[i][3] = math.sqrt(math.pow((x1 - row[0]), 2) + math.pow((x2 - row[1]), 2))
+            for row in self.xTrain:             # iterate through each row of training data
+                sums = 0
+                for index in range(len(xrow)):  # then iterate through each feature in a row to calculate mikowski dist
+                    sums += math.pow(abs(xrow[index] - row[index]), len(xrow))
+                self.trainSet[i][len(self.trainSet[0]) - 1] = sums  # set the last column (placeholder) to distance
                 i += 1
-                # break
-            # print(self.trainSet)
-            output = self.trainSet[np.argsort(self.trainSet[:, 3])]
-            # print(self.trainSet)
+            output = self.trainSet[np.argsort(self.trainSet[:, len(self.trainSet[0]) - 1])] # sort by smallest distance
             voting = 0
-            # break
-            for sampleIndex in range(self.k):
-                # print("Sample ", sampleIndex, ": ", output[sampleIndex][0], " ", output[sampleIndex][3])
-                if output[sampleIndex][0] == 1.0:
+            for sampleIndex in range(self.k):   # get the k smallest distances and their classifications
+                if output[sampleIndex][0] == 1.0:   # if equal to one, add one to vote
                     voting += 1
-                else:
+                else:                               # otherwise, subtract one from vote
                     voting -= 1
-            if voting >= 0:
-                # print("append 1")
+            if voting >= 0:                     # if the final vote is positive or 0, then classify test sample as one
                 yHat.append([1])
             else:
-                yHat.append([0])
-                # print("append 0")
+                yHat.append([0])                # otherwise classify test sample as 0
             j += 1
-            # break
-            #print()
-        # print(dist)
-        # TODO
-        # print(yHat)
         return yHat
 
 
@@ -126,10 +114,32 @@ def accuracy(yHat, yTrue):
     # TODO calculate the accuracy
     # print(yTrue)
     acc = 0
-    for i in range(len(yHat)):
+    for i in range(len(yHat)):          # count the number of correct classifications
         if yHat[i] == yTrue[i]:
             acc += 1
-    return acc / len(yTrue)
+    return acc / len(yTrue)             # return the num correct / total test samples
+
+
+# used to iterate from 1 to k to generate figure comparing different values of k.
+def performance(xTrain, yTrain, xTest, yTest, k):
+    acc = np.empty([k, 2])
+    for i in range(1, k+1):             # for i=1 to k
+        knn = Knn(i)                    # run the KNN classifier and record the accuracy for test and training data
+        knn.train(xTrain, yTrain['label'])
+        yHatTrain = knn.predict(xTrain)
+        trainAcc = accuracy(yHatTrain, yTrain['label'])
+        yHatTest = knn.predict(xTest)
+        testAcc = accuracy(yHatTest, yTest['label'])
+        acc[i - 1][0] = trainAcc
+        acc[i - 1][1] = testAcc
+
+    # set up plot to print the accuracy of test and training data for varying values of k
+    plt.title("Training and Testing Accuracy for K-Nearest Neighbors Algorithm")
+    plt.xlabel("K value")
+    plt.ylabel("Percent accurate")
+    plt.plot([i for i in range(1, k+1)], acc)       # start plot from 1, not 0 (default)
+    plt.legend(("Training Accuracy", "Testing Accuracy"))
+    plt.show()
 
 
 def main():
@@ -160,7 +170,7 @@ def main():
     yTrain = pd.read_csv(args.yTrain)
     xTest = pd.read_csv(args.xTest)
     yTest = pd.read_csv(args.yTest)
-    # create an instance of the model
+    #create an instance of the model
     knn = Knn(args.k)
     knn.train(xTrain, yTrain['label'])
     # predict the training dataset
@@ -171,6 +181,9 @@ def main():
     testAcc = accuracy(yHatTest, yTest['label'])
     print("Training Acc:", trainAcc)
     print("Test Acc:", testAcc)
+
+    # runs the KNN from 1 to K to compare the accuracy for different values of K.
+    performance(xTrain, yTrain, xTest, yTest, args.k)
 
 
 if __name__ == "__main__":
