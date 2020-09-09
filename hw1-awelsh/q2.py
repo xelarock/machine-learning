@@ -54,7 +54,7 @@ def q2b():                                              # code for figure for Qu
     petalLengthPlot.set_title("Petal Length of Three Species of Irises")    # set y axis label
 
     petalWidth = np.concatenate((setosaPetalWidth, versicolourPetalWidth, virginicaPetalWidth), axis=1)
-    print(petalWidth)                                   # merges the petal width of each flower into a 50*3 array
+    # print(petalWidth)                                   # merges the petal width of each flower into a 50*3 array
 
     petalWidthPlot = fig.add_subplot(144)               # creates the plot for petal width
     petalWidthPlot.boxplot(petalWidth, labels=("Setosa", "Versicolour", "Virginica"))   # set box plot values and labels

@@ -189,7 +189,6 @@ def main():
         xTrainIrr, yTrainIrr = add_irr_feature(xTrain, xTest)
         results[i - 1][3] = knn_train_test(i, xTrainIrr, yTrain, yTrainIrr, yTest)
         print("Test Acc (with irrelevant feature):", results[i - 1][3])
-        print(results)
 
     # set up figure to display results of pre-processing with different values of K
     plt.title("Training and Testing Accuracy for K-Nearest Neighbors Algorithm")

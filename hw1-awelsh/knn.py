@@ -112,7 +112,6 @@ def accuracy(yHat, yTrue):
         The accuracy of the model
     """
     # TODO calculate the accuracy
-    # print(yTrue)
     acc = 0
     for i in range(len(yHat)):          # count the number of correct classifications
         if yHat[i] == yTrue[i]:
