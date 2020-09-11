@@ -100,18 +100,13 @@ class DecisionTree(object):
         elif depth >= self.maxDepth:
             return Node(xFeat, y, None, None, guess, None, None)
         else:
-            i = 0
             lowest_val = 0
             lowest_gini = 999
-            lowest_index = 0
             largest_gain = -999
             lowest_featName = None
             if self.criterion == 'entropy':
                 root_entropy = self.calculate_entropy(y)
             for featName, feature in xFeat.iteritems():
-                # xFeat = xFeat.sort_values(featName)
-                # print(featName)
-                # print("+++++++++++++++++++++++++++++++++++++")
                 for value in xFeat[featName].unique():
                     # print("Feature: ", featName, " Value: ", value)
                     leftX, leftY, rightX, rightY = self.splitData(xFeat, y, featName, value)
@@ -121,24 +116,13 @@ class DecisionTree(object):
                         right_gini = self.calculate_gini(rightY)
                         avg_gini = (left_gini * len(leftY) + right_gini * len(rightY)) / len(y)
                         if avg_gini <= lowest_gini:
-                            lowest_gini = avg_gini
-                            lowest_val = value
-                            lowest_index = i
-                            lowest_featName = featName
-                        i += 1
+                            lowest_gini, lowest_val, lowest_featName = avg_gini, value, featName
                     elif self.criterion == 'entropy':
                         left_entropy = self.calculate_entropy(leftY)
                         right_entropy = self.calculate_entropy(rightY)
-                        # print("left: ", self.calculate_gini(leftY), " right: ", self.calculate_gini(rightY))
                         gain = root_entropy - (len(leftY)/len(y) * left_entropy) - (len(rightY)/len(y) * right_entropy)
-                        # print("gain: ", gain)
                         if gain >= largest_gain:
-                            lowest_val = value
-                            lowest_index = i
-                            lowest_featName = featName
-                            largest_gain = gain
-                        i += 1
-                i = 0
+                            lowest_val, lowest_featName, largest_gain = value, featName, gain
             # print("lowest gini: ", lowest_gini, "largest gain: ", largest_gain, lowest_val, lowest_index, lowest_featName)
             tree = Node(xFeat, y, None, None, y.value_counts().idxmax(), lowest_featName, lowest_val)
             leftX, leftY, rightX, rightY = self.splitData(xFeat, y, lowest_featName, lowest_val)
@@ -268,11 +252,11 @@ def main():
     xTest = pd.read_csv(args.xTest)
     yTest = pd.read_csv(args.yTest)
     # create an instance of the decision tree using gini
-    # dt1 = DecisionTree('gini', args.md, args.mls)
-    # trainAcc1, testAcc1 = dt_train_test(dt1, xTrain, yTrain, xTest, yTest)
-    # print("GINI Criterion ---------------")
-    # print("Training Acc:", trainAcc1)
-    # print("Test Acc:", testAcc1)
+    dt1 = DecisionTree('gini', args.md, args.mls)
+    trainAcc1, testAcc1 = dt_train_test(dt1, xTrain, yTrain, xTest, yTest)
+    print("GINI Criterion ---------------")
+    print("Training Acc:", trainAcc1)
+    print("Test Acc:", testAcc1)
     dt = DecisionTree('entropy', args.md, args.mls)
     trainAcc, testAcc = dt_train_test(dt, xTrain, yTrain, xTest, yTest)
     print("Entropy Criterion ---------------")

@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn import metrics
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split,KFold, ShuffleSplit
 import time
 
 
@@ -31,10 +32,15 @@ def holdout(model, xFeat, y, testSize):
     timeElapsed: float
         Time it took to run this function
     """
-    trainAuc = 0
-    testAuc = 0
-    timeElapsed = 0
-    # TODO fill int
+    before = time.time()
+    trainX, testX = train_test_split(xFeat, test_size=testSize)
+    trainY, testY = train_test_split(y, test_size=testSize)
+
+    model.fit(trainX, trainY)
+    trainAuc = model.score(trainX, trainY)
+    testAuc = model.score(testX, testY)
+    after = time.time()
+    timeElapsed = after - before
     return trainAuc, testAuc, timeElapsed
 
 
@@ -66,10 +72,25 @@ def kfold_cv(model, xFeat, y, k):
     timeElapsed: float
         Time it took to run this function
     """
+    before = time.time()
+    kf = KFold(n_splits=k)
     trainAuc = 0
     testAuc = 0
-    timeElapsed = 0
-    # TODO FILL IN
+    for train_index, test_index in kf.split(xFeat):
+        #print("TRAIN:", train_index, "TEST:", test_index)
+        trainX = xFeat.iloc[train_index]
+        testX = xFeat.iloc[test_index]
+        trainY = y.iloc[train_index]
+        testY = y.iloc[test_index]
+        # print(trainX, trainY)
+        model.fit(trainX, trainY)
+        trainAuc += model.score(trainX, trainY)
+        testAuc += model.score(testX, testY)
+    #print(score)
+    trainAuc = trainAuc / k
+    testAuc = testAuc / k
+    after = time.time()
+    timeElapsed = after - before
     return trainAuc, testAuc, timeElapsed
 
 
@@ -104,8 +125,18 @@ def mc_cv(model, xFeat, y, testSize, s):
     """
     trainAuc = 0
     testAuc = 0
-    timeElapsed = 0
-    # TODO FILL IN
+    before = time.time()
+    for i in range(s):
+        trainX, testX = train_test_split(xFeat, test_size=testSize, shuffle=True)
+        trainY, testY = train_test_split(y, test_size=testSize, shuffle=True)
+
+        model.fit(trainX, trainY)
+        trainAuc += model.score(trainX, trainY)
+        testAuc += model.score(testX, testY)
+    trainAuc = trainAuc / s
+    testAuc = testAuc / s
+    after = time.time()
+    timeElapsed = after - before
     return trainAuc, testAuc, timeElapsed
 
 
