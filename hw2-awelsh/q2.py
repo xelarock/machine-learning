@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn import metrics
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split,KFold, ShuffleSplit
+from sklearn.model_selection import train_test_split, KFold
 import time
 
 
@@ -33,12 +33,24 @@ def holdout(model, xFeat, y, testSize):
         Time it took to run this function
     """
     before = time.time()
-    trainX, testX = train_test_split(xFeat, test_size=testSize)
-    trainY, testY = train_test_split(y, test_size=testSize)
+    trainX, testX, trainY, testY = train_test_split(xFeat, y, train_size=testSize)
+    # = train_test_split(y, test_size=testSize)
+
+    # print(trainX, testX)
+    # print(trainY, testY)
 
     model.fit(trainX, trainY)
-    trainAuc = model.score(trainX, trainY)
-    testAuc = model.score(testX, testY)
+
+    yHatTrain = model.predict_proba(trainX)
+    yHatTest = model.predict_proba(testX)
+    # calculate auc for training
+    fpr, tpr, thresholds = metrics.roc_curve(trainY['label'],
+                                             yHatTrain[:, 1])
+    trainAuc = metrics.auc(fpr, tpr)
+    # calculate auc for test dataset
+    fpr, tpr, thresholds = metrics.roc_curve(testY['label'],
+                                             yHatTest[:, 1])
+    testAuc = metrics.auc(fpr, tpr)
     after = time.time()
     timeElapsed = after - before
     return trainAuc, testAuc, timeElapsed
@@ -84,8 +96,20 @@ def kfold_cv(model, xFeat, y, k):
         testY = y.iloc[test_index]
         # print(trainX, trainY)
         model.fit(trainX, trainY)
-        trainAuc += model.score(trainX, trainY)
-        testAuc += model.score(testX, testY)
+
+        yHatTrain = model.predict_proba(trainX)
+        yHatTest = model.predict_proba(testX)
+        # calculate auc for training
+        fpr, tpr, thresholds = metrics.roc_curve(trainY['label'],
+                                                 yHatTrain[:, 1])
+        trainAuc += metrics.auc(fpr, tpr)
+        # calculate auc for test dataset
+        fpr, tpr, thresholds = metrics.roc_curve(testY['label'],
+                                                 yHatTest[:, 1])
+        testAuc += metrics.auc(fpr, tpr)
+
+        # trainAuc += model.score(trainX, trainY)
+        # testAuc += model.score(testX, testY)
     #print(score)
     trainAuc = trainAuc / k
     testAuc = testAuc / k
@@ -127,12 +151,26 @@ def mc_cv(model, xFeat, y, testSize, s):
     testAuc = 0
     before = time.time()
     for i in range(s):
-        trainX, testX = train_test_split(xFeat, test_size=testSize, shuffle=True)
-        trainY, testY = train_test_split(y, test_size=testSize, shuffle=True)
+        trainX, testX, trainY, testY = train_test_split(xFeat, y, shuffle=True, train_size=testSize)
+
+        # print(trainX, testX, trainY, testY)
 
         model.fit(trainX, trainY)
-        trainAuc += model.score(trainX, trainY)
-        testAuc += model.score(testX, testY)
+
+        yHatTrain = model.predict_proba(trainX)
+        yHatTest = model.predict_proba(testX)
+
+        print(yHatTrain)
+        # calculate auc for training
+        fpr, tpr, thresholds = metrics.roc_curve(trainY['label'],
+                                                 yHatTrain[:, 1])
+        trainAuc += metrics.auc(fpr, tpr)
+        # calculate auc for test dataset
+        fpr, tpr, thresholds = metrics.roc_curve(testY['label'],
+                                                 yHatTest[:, 1])
+        testAuc += metrics.auc(fpr, tpr)
+        # trainAuc += model.score(trainX, trainY)
+        # testAuc += model.score(testX, testY)
     trainAuc = trainAuc / s
     testAuc = testAuc / s
     after = time.time()

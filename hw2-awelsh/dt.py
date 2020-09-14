@@ -86,16 +86,13 @@ class DecisionTree(object):
         return -1 * entropy
 
     def grow_tree(self, xFeat, y, depth):
-        print("depth: ", depth)
-
-        # if self.tree is None:
-        #     print("tree is none")
+        # print("depth: ", depth)
 
         guess = y.value_counts().idxmax()
 
         if len(y.value_counts()) == 1:  # if only one label value (unambiguous)
             return Node(xFeat, y, None, None, guess, None, None)
-        elif len(xFeat) <= self.minLeafSample:  # if remaining features is empty
+        elif len(xFeat) < self.minLeafSample:  # if remaining features is empty
             return Node(xFeat, y, None, None, guess, None, None)
         elif depth >= self.maxDepth:
             return Node(xFeat, y, None, None, guess, None, None)
@@ -262,6 +259,8 @@ def main():
     print("Entropy Criterion ---------------")
     print("Training Acc:", trainAcc)
     print("Test Acc:", testAcc)
+
+
 
 
 if __name__ == "__main__":
