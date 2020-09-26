@@ -2,9 +2,11 @@ import argparse
 import numpy as np
 import pandas as pd
 from sklearn import metrics
+from sklearn.utils import shuffle
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split, KFold
 import time
+import matplotlib.pyplot as plt
 
 
 def holdout(model, xFeat, y, testSize):
@@ -33,15 +35,11 @@ def holdout(model, xFeat, y, testSize):
         Time it took to run this function
     """
     before = time.time()
-    trainX, testX, trainY, testY = train_test_split(xFeat, y, train_size=testSize)
-    # = train_test_split(y, test_size=testSize)
+    trainX, testX, trainY, testY = train_test_split(xFeat, y, shuffle=True, test_size=testSize)     # split data
 
-    # print(trainX, testX)
-    # print(trainY, testY)
+    model.fit(trainX, trainY)                                                                       # fit data
 
-    model.fit(trainX, trainY)
-
-    yHatTrain = model.predict_proba(trainX)
+    yHatTrain = model.predict_proba(trainX)                                                         # predict
     yHatTest = model.predict_proba(testX)
     # calculate auc for training
     fpr, tpr, thresholds = metrics.roc_curve(trainY['label'],
@@ -50,7 +48,7 @@ def holdout(model, xFeat, y, testSize):
     # calculate auc for test dataset
     fpr, tpr, thresholds = metrics.roc_curve(testY['label'],
                                              yHatTest[:, 1])
-    testAuc = metrics.auc(fpr, tpr)
+    testAuc = metrics.auc(fpr, tpr)                                                                 # return the AUC
     after = time.time()
     timeElapsed = after - before
     return trainAuc, testAuc, timeElapsed
@@ -84,21 +82,28 @@ def kfold_cv(model, xFeat, y, k):
     timeElapsed: float
         Time it took to run this function
     """
+    mergedSet = pd.concat([xFeat, y], axis=1)                       # merge the data so that you can shuffle it
+    mergedSet = shuffle(mergedSet)
+    y = mergedSet.iloc[:, -1:]
+    xFeat = mergedSet.iloc[:, 0:len(mergedSet.columns)-1]           # separate the features of labels again
+
     before = time.time()
-    kf = KFold(n_splits=k)
+    kf = KFold(n_splits=k)                                          # setup of k fold
     trainAuc = 0
     testAuc = 0
-    for train_index, test_index in kf.split(xFeat):
-        #print("TRAIN:", train_index, "TEST:", test_index)
-        trainX = xFeat.iloc[train_index]
+    for train_index, test_index in kf.split(xFeat):                 # for each fold
+        trainX = xFeat.iloc[train_index]                            # set up train and test data
         testX = xFeat.iloc[test_index]
         trainY = y.iloc[train_index]
         testY = y.iloc[test_index]
-        # print(trainX, trainY)
-        model.fit(trainX, trainY)
+        model.fit(trainX, trainY)                                   # fit to model
 
-        yHatTrain = model.predict_proba(trainX)
+        yHatTrain = model.predict_proba(trainX)                     # predict
         yHatTest = model.predict_proba(testX)
+        if len(yHatTrain[0]) == 1:                                  # if the predictions are all one class, add a
+            yHatTrain = np.append(yHatTrain, np.zeros((len(yHatTrain), 1)), axis=1) # second column of zeros to work
+        if len(yHatTest[0]) == 1:
+            yHatTest = np.append(yHatTest, np.zeros((len(yHatTest), 1)), axis=1)
         # calculate auc for training
         fpr, tpr, thresholds = metrics.roc_curve(trainY['label'],
                                                  yHatTrain[:, 1])
@@ -108,10 +113,7 @@ def kfold_cv(model, xFeat, y, k):
                                                  yHatTest[:, 1])
         testAuc += metrics.auc(fpr, tpr)
 
-        # trainAuc += model.score(trainX, trainY)
-        # testAuc += model.score(testX, testY)
-    #print(score)
-    trainAuc = trainAuc / k
+    trainAuc = trainAuc / k                 # sum up the accuracies and take the average
     testAuc = testAuc / k
     after = time.time()
     timeElapsed = after - before
@@ -150,17 +152,14 @@ def mc_cv(model, xFeat, y, testSize, s):
     trainAuc = 0
     testAuc = 0
     before = time.time()
-    for i in range(s):
-        trainX, testX, trainY, testY = train_test_split(xFeat, y, shuffle=True, train_size=testSize)
+    for i in range(s):                                                      # for the number of samples
+        trainX, testX, trainY, testY = train_test_split(xFeat, y, shuffle=True, test_size=testSize)
 
-        # print(trainX, testX, trainY, testY)
+        model.fit(trainX, trainY)                                           # split and fit the data
 
-        model.fit(trainX, trainY)
-
-        yHatTrain = model.predict_proba(trainX)
+        yHatTrain = model.predict_proba(trainX)                             # fit the data
         yHatTest = model.predict_proba(testX)
 
-        print(yHatTrain)
         # calculate auc for training
         fpr, tpr, thresholds = metrics.roc_curve(trainY['label'],
                                                  yHatTrain[:, 1])
@@ -169,9 +168,7 @@ def mc_cv(model, xFeat, y, testSize, s):
         fpr, tpr, thresholds = metrics.roc_curve(testY['label'],
                                                  yHatTest[:, 1])
         testAuc += metrics.auc(fpr, tpr)
-        # trainAuc += model.score(trainX, trainY)
-        # testAuc += model.score(testX, testY)
-    trainAuc = trainAuc / s
+    trainAuc = trainAuc / s                                                 # sum and take tge average accuracies
     testAuc = testAuc / s
     after = time.time()
     timeElapsed = after - before
@@ -246,6 +243,7 @@ def main():
     dtClass = DecisionTreeClassifier(max_depth=15,
                                      min_samples_leaf=10)
     # use the holdout set with a validation size of 30 of training
+
     aucTrain1, aucVal1, time1 = holdout(dtClass, xTrain, yTrain, 0.70)
     # use 2-fold validation
     aucTrain2, aucVal2, time2 = kfold_cv(dtClass, xTrain, yTrain, 2)
@@ -268,6 +266,25 @@ def main():
                            ['True Test', trainAuc, testAuc, 0]],
                            columns=['Strategy', 'TrainAUC', 'ValAUC', 'Time'])
     print(perfDF)
+
+    """
+    The code below creates a table of the above data in matplotlib. This was used for the writeup. 
+    """
+    plt.figure()
+
+    # table
+    plt.subplot(121)
+
+    cell_text = []
+    for row in range(len(perfDF)):
+        cell_text.append(perfDF.iloc[row])
+
+    table = plt.table(cellText=cell_text, colLabels=perfDF.columns, loc='center', colWidths=[0.3 for x in perfDF.columns])
+    table.auto_set_font_size(False)
+    table.set_fontsize(6)
+    plt.axis('off')
+
+    plt.show()
 
 
 if __name__ == "__main__":

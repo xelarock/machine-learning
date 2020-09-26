@@ -3,9 +3,10 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
 import math
+import matplotlib.pyplot as plt
 
 
-class Node:
+class Node:                                                                                 # create Node class
     left = None
     right = None
     xFeatures = None
@@ -14,7 +15,7 @@ class Node:
     featureName = None
     featureValue = None
 
-    def __init__(self, xFeatures, yClass, left, right, guess, feature_name, feature_value):
+    def __init__(self, xFeatures, yClass, left, right, guess, feature_name, feature_value):         # initialize node
         self.left = left
         self.right = right
         self.xFeatures = xFeatures
@@ -50,82 +51,68 @@ class DecisionTree(object):
         self.minLeafSample = minLeafSample
         self.tree = None
 
-    def splitData(self, xFeat, y, split_feat, split_value):
+    def splitData(self, xFeat, y, split_feat, split_value):         # splits data set along a certain value in a feature
         mergedSet = pd.concat([xFeat, y], axis=1)
-        #print(mergedSet)
-        leftX = None
-        rightX = None
 
-        leftX = mergedSet[mergedSet[split_feat] <= split_value]
+        leftX = mergedSet[mergedSet[split_feat] <= split_value]     # left set is all values less than or equal to split
         leftY = leftX.iloc[:, -1]
         leftX = leftX.drop(labels='label', axis=1)
 
-        rightX = mergedSet[mergedSet[split_feat] > split_value]
+        rightX = mergedSet[mergedSet[split_feat] > split_value]     # right set is all values greater than to split
         rightY = rightX.iloc[:, -1]
         rightX = rightX.drop(labels='label', axis=1)
 
-        #print(leftX, leftY, rightX, rightY)
+        return leftX, leftY, rightX, rightY                         # return split data
 
-        return leftX, leftY, rightX, rightY
-
-    def calculate_gini(self, y):
+    def calculate_gini(self, y):                                    # calculates the gini index
         gini = 0
         total = len(y)
-        for i in range(len(y.value_counts().values)):
-            gini += (y.value_counts().values[i]/total) ** 2
+        for i in range(len(y.value_counts().values)):               # for each class in the data
+            gini += (y.value_counts().values[i]/total) ** 2         # sum up the fraction squared
         return 1 - gini
 
-    def calculate_entropy(self, y):
+    def calculate_entropy(self, y):                                 # calculates entropy
         entropy = 0
         total = len(y)
-        # print("number of somethin: ", len(y.value_counts().values))
-        for i in range(len(y.value_counts().values)):
-            val = (y.value_counts().values[i]/total) * math.log2((y.value_counts().values[i]/total))
-            # print("val: ", val)
+        for i in range(len(y.value_counts().values)):               # for each class in the data
+            val = math.log2((y.value_counts().values[i]/total))     # do log2 of the fraction
             entropy += val
-        return -1 * entropy
+        return -1 * entropy                                         # return the negative
 
-    def grow_tree(self, xFeat, y, depth):
-        # print("depth: ", depth)
-
-        guess = y.value_counts().idxmax()
+    def grow_tree(self, xFeat, y, depth):                           # builds the decision tree and keeps track of depth
+        guess = y.value_counts().idxmax()                           # guess is most common label in set
 
         if len(y.value_counts()) == 1:  # if only one label value (unambiguous)
             return Node(xFeat, y, None, None, guess, None, None)
         elif len(xFeat) < self.minLeafSample:  # if remaining features is empty
             return Node(xFeat, y, None, None, guess, None, None)
-        elif depth >= self.maxDepth:
+        elif depth >= self.maxDepth: # if depth is greater than max depth
             return Node(xFeat, y, None, None, guess, None, None)
         else:
-            lowest_val = 0
+            lowest_val = 0                                          # set values to find best split
             lowest_gini = 999
-            largest_gain = -999
+            lowest_entropy = 999
             lowest_featName = None
-            if self.criterion == 'entropy':
-                root_entropy = self.calculate_entropy(y)
-            for featName, feature in xFeat.iteritems():
-                for value in xFeat[featName].unique():
-                    # print("Feature: ", featName, " Value: ", value)
-                    leftX, leftY, rightX, rightY = self.splitData(xFeat, y, featName, value)
-                    # print("left: ", self.calculate_gini(leftY), " right: ", self.calculate_gini(rightY))
-                    if self.criterion == 'gini':
-                        left_gini = self.calculate_gini(leftY)
+            for featName, feature in xFeat.iteritems():             # for each feature
+                for value in xFeat[featName].unique():              # for each unique value in that feature
+                    leftX, leftY, rightX, rightY = self.splitData(xFeat, y, featName, value)    # split by that value
+                    if self.criterion == 'gini':                    # if criteria is gini
+                        left_gini = self.calculate_gini(leftY)      # calculate left and right child gini indexes
                         right_gini = self.calculate_gini(rightY)
-                        avg_gini = (left_gini * len(leftY) + right_gini * len(rightY)) / len(y)
-                        if avg_gini <= lowest_gini:
+                        avg_gini = (left_gini * len(leftY) + right_gini * len(rightY)) / len(y)     # find the average
+                        if avg_gini <= lowest_gini:                 # if its lower, than remember the lowest split info
                             lowest_gini, lowest_val, lowest_featName = avg_gini, value, featName
-                    elif self.criterion == 'entropy':
-                        left_entropy = self.calculate_entropy(leftY)
+                    elif self.criterion == 'entropy':               # if criteria is entropy
+                        left_entropy = self.calculate_entropy(leftY)    # calculate left and right
                         right_entropy = self.calculate_entropy(rightY)
-                        gain = root_entropy - (len(leftY)/len(y) * left_entropy) - (len(rightY)/len(y) * right_entropy)
-                        if gain >= largest_gain:
-                            lowest_val, lowest_featName, largest_gain = value, featName, gain
-            # print("lowest gini: ", lowest_gini, "largest gain: ", largest_gain, lowest_val, lowest_index, lowest_featName)
-            tree = Node(xFeat, y, None, None, y.value_counts().idxmax(), lowest_featName, lowest_val)
-            leftX, leftY, rightX, rightY = self.splitData(xFeat, y, lowest_featName, lowest_val)
-            tree.left = self.grow_tree(leftX, leftY, depth + 1)
-            tree.right = self.grow_tree(rightX, rightY, depth + 1)
-        return tree
+                        entropy = (len(leftY)/len(y) * left_entropy) + (len(rightY)/len(y) * right_entropy) # get total
+                        if entropy <= lowest_entropy:               # if less, than remember the lowest split info
+                            lowest_val, lowest_featName, lowest_entropy = value, featName, entropy
+            tree = Node(xFeat, y, None, None, y.value_counts().idxmax(), lowest_featName, lowest_val) # create the tree
+            leftX, leftY, rightX, rightY = self.splitData(xFeat, y, lowest_featName, lowest_val)    # split along lowest
+            tree.left = self.grow_tree(leftX, leftY, depth + 1)                                     # make left node
+            tree.right = self.grow_tree(rightX, rightY, depth + 1)                                  # make right node
+        return tree                                                 # recurse and return the final tree at the end
 
 
     def train(self, xFeat, y):
@@ -144,20 +131,17 @@ class DecisionTree(object):
         self : object
         """
 
-        self.tree = self.grow_tree(xFeat, y, 0)
-
-        #print(xFeat)
-        #print(y)
+        self.tree = self.grow_tree(xFeat, y, 0)         # generate the tree
         return self
 
     def dtTest(self, tree, sample):
-        if tree.right is None and tree.left is None:
+        if tree.right is None and tree.left is None:                # predict the value, if at a leaf node
             return tree.guess
-        elif tree.right is not None or tree.left is not None:
-            if sample[tree.featureName] <= tree.featureValue:
-                return self.dtTest(tree.left, sample)
-            else:
-                return self.dtTest(tree.right, sample)
+        elif tree.right is not None and sample[tree.featureName] > tree.featureValue:   # if left node exist and
+            return self.dtTest(tree.right, sample)                                      # sample value is in there, go
+        elif tree.left is not None and sample[tree.featureName] <= tree.featureValue:   # if right node exist and
+            return self.dtTest(tree.left, sample)                                       # sample value is in there, go
+        return tree.guess
 
     def predict(self, xFeat):
         """
@@ -177,7 +161,7 @@ class DecisionTree(object):
 
         yHat = [] # variable to store the estimated class label
         for index, sample in xFeat.iterrows():
-            yHat.append(self.dtTest(self.tree, sample))
+            yHat.append(self.dtTest(self.tree, sample))             # predict the value
         return yHat
 
 
@@ -260,7 +244,41 @@ def main():
     print("Training Acc:", trainAcc)
     print("Test Acc:", testAcc)
 
+    """
+    Below is code used to generate the 2 3D  plots (one for each criterion (gini/entropy)). Because I ran a lot of 
+    models and was scared of losing my data, I ran chunks of parameters in q1.ipynb, saved the results to 
+    "dt-model-accuracy.csv" and then imported that CSV file to generate the plots. See q1.ipynb for the code to generate
+    models.
+    """
 
+    # dt_model_accuracy = pd.read_csv("dt-model-accuracy.csv")
+    #
+    # gini figure
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(dt_model_accuracy['max_depth'], dt_model_accuracy['min_leaf_sample'], dt_model_accuracy['gini_train'], c='b')
+    # ax.set_xlabel("max depth")
+    # ax.set_ylabel("min leaf sample")
+    # ax.set_zlabel("gini train")
+    # ax.scatter(dt_model_accuracy['max_depth'], dt_model_accuracy['min_leaf_sample'], dt_model_accuracy['gini_test'], c='r')
+    # ax.set_xlabel("max depth")
+    # ax.set_ylabel("min leaf sample")
+    # ax.set_zlabel("gini accuracy")
+    #
+    # entropy figure
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(111, projection='3d')
+    # ax1.scatter(dt_model_accuracy['max_depth'], dt_model_accuracy['min_leaf_sample'], dt_model_accuracy['entropy_train'],
+    #            c='b')
+    # ax1.set_xlabel("max depth")
+    # ax1.set_ylabel("min leaf sample")
+    # ax1.set_zlabel("entropy accuracy")
+    # ax1.scatter(dt_model_accuracy['max_depth'], dt_model_accuracy['min_leaf_sample'], dt_model_accuracy['entropy_test'],
+    #            c='r')
+    # ax1.set_xlabel("max depth")
+    # ax1.set_ylabel("min leaf sample")
+    # ax1.set_zlabel("entropy accuracy")
+    # plt.show()
 
 
 if __name__ == "__main__":
