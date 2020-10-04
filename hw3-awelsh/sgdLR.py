@@ -4,6 +4,7 @@ import pandas as pd
 import time
 from sklearn.utils import shuffle
 from lr import LinearRegression, file_to_numpy
+import matplotlib.pyplot as plt
 
 
 class SgdLR(LinearRegression):
@@ -25,7 +26,7 @@ class SgdLR(LinearRegression):
             for i in range(0, len(input), self.bs):
                 yield input[i:i+self.bs, :]
 
-    def train_predict(self, xTrain, yTrain, xTest, yTest):
+    def train_predict(self, xTrain, yTrain, xTest, yTest, fraction_train_data=1.0):
         """
         See definition in LinearRegression class
         """
@@ -36,6 +37,11 @@ class SgdLR(LinearRegression):
         # print(ones.T)
         X = np.concatenate((ones[:, np.newaxis], xTrain), axis=1)
         XT = np.concatenate((onesT[:, np.newaxis], xTest), axis=1)
+
+        if fraction_train_data != 1.0:
+            X, removedX = np.split(X, [int(len(X)*fraction_train_data)])
+            yTrain, removedyTrain = np.split(yTrain, [int(len(yTrain)*fraction_train_data)])
+            print(len(X), len(removedX), len(yTrain), len(removedyTrain))
         trainStats = {}
         # print(xTrain, yTrain)
 
@@ -50,7 +56,7 @@ class SgdLR(LinearRegression):
 
             # print("!!!!!!!!!")
             # print(list(self.divide_chunks(xTrainShuffled)))
-            x_batch_all = np.array_split(xTrainShuffled, len(xTrain)/self.bs)
+            x_batch_all = np.array_split(xTrainShuffled, len(X)/self.bs)
             # print(x_batch_all)
             # print("!!!!!!!!!++++++++")
             y_batch_all = np.array_split(yTrainShuffled, len(yTrain)/self.bs)
@@ -114,13 +120,75 @@ def main():
 
     # setting the seed for deterministic behavior
     np.random.seed(args.seed)   
-    model = SgdLR(args.lr, args.bs, args.epoch)
-    trainStats = model.train_predict(xTrain, yTrain, xTest, yTest)
-    print(trainStats)
-    for key, value in trainStats.items():
-        print(key, ' : ')
-        for key1, value1 in value.items():
-            print(key1, ' : ', value1)
+    # model = SgdLR(args.lr, args.bs, args.epoch)
+    # trainStats = model.train_predict(xTrain, yTrain, xTest, yTest)
+    # print(trainStats)
+    # for key, value in trainStats.items():
+    #     print(key, ' : ')
+    #     for key1, value1 in value.items():
+    #         print(key1, ' : ', value1)
+
+    # Code for Question 3B
+    # model = SgdLR(args.lr, args.bs, args.epoch)
+    # trainStats = model.train_predict(xTrain, yTrain, xTest, yTest, fraction_train_data=.4)
+    # for key, value in trainStats.items():
+    #     print(key, ' : ')
+    #     for key1, value1 in value.items():
+    #         print(key1, ' : ', value1)
+
+    # print(trainStats.keys())
+    # for lr in [0.1, 0.01, 0.001, 0.0001]:
+    #     print("LEARNING RATE OF: ", lr)
+    #     model = SgdLR(lr, 1, args.epoch)
+    #     trainStats = model.train_predict(xTrain, yTrain, xTest, yTest, fraction_train_data=.4)
+    #     # for key, value in trainStats.items():
+    #     #     print(key, ' : ')
+    #     #     for key1, value1 in value.items():
+    #     #         print(key1, ' : ', value1)
+    #     results = [trainStats[i]['train-mse'] for i in trainStats.keys()]
+    #     plt.plot(results, label=lr)
+    #
+    # plt.title("Training MSE for Various Learning Rates with Batch Size 1 and 100 Epochs")
+    # plt.xlabel("Epoch")
+    # plt.ylabel("MSE")
+    # plt.legend()
+    # plt.show()
+
+    # Code for Question 3C
+    # model = SgdLR(.001, 1, args.epoch)
+    # trainStats = model.train_predict(xTrain, yTrain, xTest, yTest)
+    # results = [trainStats[i]['train-mse'] for i in trainStats.keys()]
+    # plt.plot(results, label='train-mse-lr=.001')
+    # results = [trainStats[i]['test-mse'] for i in trainStats.keys()]
+    # plt.plot(results, label='test-mse-lr=.001')
+    #
+    # plt.title("Training and Test MSE for .001 Learning Rate with Batch Size 1 and 50 Epochs")
+    # plt.xlabel("Epoch")
+    # plt.ylabel("MSE")
+    # plt.legend()
+    # plt.show()
+
+    # Code for Question 4A
+
+    # 5, 10, 15, 26, 39, 65, 86, 129, 195, 258,
+    for batch_size in [1, 5, 10, 15, 26, 39, 65, 86, 129, 195, 258, len(xTrain)]:
+        plt.figure()
+        plt.title("Training and Test MSE for 50 Epochs")
+        plt.xlabel("Epoch")
+        plt.ylabel("MSE")
+        for lr in [0.1, 0.01, 0.001, 0.0001]:
+            # print("LEARNING RATE OF: ", lr)
+            model = SgdLR(lr, batch_size, args.epoch)
+            trainStats = model.train_predict(xTrain, yTrain, xTest, yTest)
+            if trainStats[0]['train-mse'] < 10.0:
+                print("LEARNING RATE OF:", lr, "batch size of:", batch_size)
+                results = [trainStats[i]['train-mse'] for i in trainStats.keys()]
+                plt.plot(results, label="bs=" + str(batch_size) + " lr=" + str(lr))
+        plt.legend()
+    plt.show()
+
+
+
 
 if __name__ == "__main__":
     main()
