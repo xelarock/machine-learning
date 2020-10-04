@@ -1,3 +1,6 @@
+# THIS CODE IS MY OWN WORK, IT WAS WRITTEN WITHOUT CONSULTING CODE WRITTEN BY OTHER STUDENTS.
+# Alex Welsh
+
 from abc import ABC, abstractmethod
 import pandas as pd
 from sklearn.metrics import mean_squared_error
@@ -47,8 +50,7 @@ class LinearRegression(ABC):
         yHat : 1d array or list with shape m
             Predicted response per sample
         """
-        yHat = []
-        yHat = np.matmul(xFeat, self.beta).tolist()
+        yHat = np.matmul(xFeat, self.beta).tolist() # the prediction Y = X * B
         return yHat
 
     def mse(self, xFeat, y):

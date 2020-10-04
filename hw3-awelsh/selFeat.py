@@ -1,3 +1,6 @@
+# THIS CODE IS MY OWN WORK, IT WAS WRITTEN WITHOUT CONSULTING CODE WRITTEN BY OTHER STUDENTS.
+# Alex Welsh
+
 import argparse
 import numpy as np
 import pandas as pd
@@ -20,9 +23,9 @@ def extract_features(df):
     """
     # extracted the day of the year and the time of the day in minutes as 2 features.
 
-    daydf = pd.to_datetime(df['date']).dt.dayofyear
+    daydf = pd.to_datetime(df['date']).dt.dayofyear         # convert date to day of year
     datedf = pd.to_datetime(df['date'])
-    timedf = datedf.dt.hour * 60 + datedf.dt.minute
+    timedf = datedf.dt.hour * 60 + datedf.dt.minute         # convert clock time total minutes
     df.insert(loc=0, column='time', value=timedf)           # appended them to the df
     df.insert(loc=0, column='day_of_year', value=daydf)
     df = df.drop(columns=['date'])                          # dropped the old date column
@@ -69,19 +72,11 @@ def preprocess_data(trainDF, testDF):
     # use the minmax scaler to scale data
     scaled_trainDF = MinMaxScaler().fit_transform(trainDF)
     scaled_testDF = MinMaxScaler().fit_transform(testDF)
-    # normalized_trainDF = normalize(scaled_trainDF)
-    # normalized_testDF = normalize(scaled_testDF)
 
-    # normalized_trainDF = normalize(trainDF)
-    # normalized_testDF = normalize(testDF)
-    # scaled_trainDF = MinMaxScaler().fit_transform(normalized_trainDF)
-    # scaled_testDF = MinMaxScaler().fit_transform(normalized_testDF)
-
+    # had to convert then back to dataframes from numpy arrays
     scaled_trainDF = pd.DataFrame(scaled_trainDF, index=trainDF.index, columns=trainDF.columns)
     scaled_testDF = pd.DataFrame(scaled_testDF, index=testDF.index, columns=testDF.columns)
 
-    print(scaled_trainDF)
-    print(scaled_testDF)
     return scaled_trainDF, scaled_testDF
 
 
