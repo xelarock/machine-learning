@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import pandas as pd
-
+from sklearn.preprocessing import MinMaxScaler, normalize
 
 
 def extract_features(df):
@@ -18,8 +18,14 @@ def extract_features(df):
     df : pandas dataframe
         The updated dataframe with the new features
     """
-    # TODO do more than this
-    df = df.drop(columns=['date'])
+    # extracted the day of the year and the time of the day in minutes as 2 features.
+
+    daydf = pd.to_datetime(df['date']).dt.dayofyear
+    datedf = pd.to_datetime(df['date'])
+    timedf = datedf.dt.hour * 60 + datedf.dt.minute
+    df.insert(loc=0, column='time', value=timedf)           # appended them to the df
+    df.insert(loc=0, column='day_of_year', value=daydf)
+    df = df.drop(columns=['date'])                          # dropped the old date column
     return df
 
 
@@ -36,7 +42,9 @@ def select_features(df):
     df : pandas dataframe
         The updated dataframe with a subset of the columns
     """
-    # TODO
+    # the following features had a Pearson correlation greater than .2 or less than -.2, and were selected because
+    # that was a relatively high correlation compared to the other features.
+    df = df[['time', 'lights', 'T2', 'RH_out']]
     return df
 
 
@@ -57,8 +65,24 @@ def preprocess_data(trainDF, testDF):
     testDF : pandas dataframe
         The preprocessed testing data
     """
-    # TODO do something
-    return trainDF, testDF
+
+    # use the minmax scaler to scale data
+    scaled_trainDF = MinMaxScaler().fit_transform(trainDF)
+    scaled_testDF = MinMaxScaler().fit_transform(testDF)
+    # normalized_trainDF = normalize(scaled_trainDF)
+    # normalized_testDF = normalize(scaled_testDF)
+
+    # normalized_trainDF = normalize(trainDF)
+    # normalized_testDF = normalize(testDF)
+    # scaled_trainDF = MinMaxScaler().fit_transform(normalized_trainDF)
+    # scaled_testDF = MinMaxScaler().fit_transform(normalized_testDF)
+
+    scaled_trainDF = pd.DataFrame(scaled_trainDF, index=trainDF.index, columns=trainDF.columns)
+    scaled_testDF = pd.DataFrame(scaled_testDF, index=testDF.index, columns=testDF.columns)
+
+    print(scaled_trainDF)
+    print(scaled_testDF)
+    return scaled_trainDF, scaled_testDF
 
 
 def main():

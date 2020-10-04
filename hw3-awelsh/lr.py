@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import pandas as pd
 from sklearn.metrics import mean_squared_error
+import numpy as np
 
 
 class LinearRegression(ABC):
@@ -47,7 +48,7 @@ class LinearRegression(ABC):
             Predicted response per sample
         """
         yHat = []
-        # TODO
+        yHat = np.matmul(xFeat, self.beta).tolist()
         return yHat
 
     def mse(self, xFeat, y):

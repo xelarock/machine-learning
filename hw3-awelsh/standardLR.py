@@ -12,8 +12,20 @@ class StandardLR(LinearRegression):
         """
         See definition in LinearRegression class
         """
+        start = time.time()
         trainStats = {}
-        # TODO: DO SOMETHING
+
+        ones = np.ones(len(xTrain))
+        onesT = np.ones(len(xTest))
+        X = np.concatenate((ones[:, np.newaxis], xTrain), axis=1)
+        XT = np.concatenate((onesT[:, np.newaxis], xTest), axis=1)
+        self.beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(np.transpose(X), X)), np.transpose(X)), yTrain)
+        print("HELOPPPPP", self.beta.shape, X.shape, XT.shape, yTrain.shape)
+        end = time.time()
+
+        trainStats['0'] = {'time': end-start,
+                           'train-mse': self.mse(X, yTrain),
+                           'test-mse': self.mse(XT, yTest)}
         return trainStats
 
 
