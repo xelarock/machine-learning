@@ -6,6 +6,6 @@ Homework 3
 # THIS CODE IS MY OWN WORK, IT WAS WRITTEN WITHOUT CONSULTING CODE WRITTEN BY OTHER STUDENTS.
 # Alex Welsh
 
-Code is dt.py, q1.ipynb, q2.py, q3.ipynb
+Code is selFeat.py, q1b.py, lr.py, standardLR.py, and sgdLR.py
 
 PDF is HW3-CS334-Alex Welsh.pdf
