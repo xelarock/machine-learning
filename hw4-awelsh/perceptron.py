@@ -26,26 +26,20 @@ class Perceptron(object):
         stats : object
             Keys represent the epochs and values the number of mistakes
         """
-        # print(len(xFeat[0]))
         self.weights = np.ones((1, len(xFeat[0])))
-        # print(self.weights.shape)
         stats = {}
 
         for i in range(self.mEpoch):
             print("Epoch: ", i)
             num_wrong = 0
             for index in range(len(xFeat)):
-                # print(index)
-                # print(x.shape)
                 prediction = np.dot(self.weights, xFeat[index])[0]
                 true_label = y[index][0]
                 if prediction >= 0:
                     prediction = 1
                 else:
                     prediction = 0
-                # print("prediction:", prediction, "true label:", true_label)
                 if prediction != true_label:
-                    # print("wrong!!!!")
                     num_wrong += 1
                     if true_label == 0:
                         self.weights = self.weights - xFeat[index]
@@ -53,7 +47,8 @@ class Perceptron(object):
                         self.weights = self.weights + xFeat[index]
 
             stats[i] = num_wrong
-
+            if num_wrong == 0:
+                return stats
 
         return stats
 
@@ -73,17 +68,14 @@ class Perceptron(object):
             Predicted response per sample
         """
         yHat = []
-        # print(self.weights)
         for index in range(len(xFeat)):
             prediction = np.dot(self.weights, xFeat[index])[0]
             if prediction >= 0:
                 prediction = 1
             else:
                 prediction = 0
-            # print("prediction:", prediction, "true label:", y[index])
             yHat.append(prediction)
 
-        # print(yHat)
         return yHat
 
 
@@ -154,6 +146,13 @@ def main():
     print(calc_mistakes(yHat, yTest))
     print("Accuracy on test dataset")
     print(1 - calc_mistakes(yHat, yTest)/len(yTest))
+
+    weights_df = pd.DataFrame(model.weights, columns=pd.read_csv(args.xTrain).columns)
+    sorted_df = weights_df.sort_values(by=0, axis=1, ascending=False)
+    print("15 most positive weights")
+    print(sorted_df.iloc[:, : 15])
+    print("15 most negative weights")
+    print(sorted_df.iloc[:, len(sorted_df.columns) - 15:])
 
 
 if __name__ == "__main__":
