@@ -25,7 +25,6 @@ def main():
                         help="filename for features of the test data")
     parser.add_argument("yTest",
                         help="filename for labels associated with the test data")
-    parser.add_argument("epoch", type=int, help="max number of epochs")
     parser.add_argument("--seed", default=334,
                         type=int, help="default seed number")
 
@@ -36,30 +35,29 @@ def main():
     yTrain = pd.read_csv(args.yTrain)
     xTest = pd.read_csv(args.xTest)
     yTest = pd.read_csv(args.yTest)
-    naive_bayes = BernoulliNB()
-    trainStats = naive_bayes.fit(xTrain, yTrain.to_numpy().ravel())
-    print(trainStats)
+    if args.xTrain == "binary_Train.csv":
+        naive_bayes = BernoulliNB()
+    else:
+        naive_bayes = MultinomialNB()
+    naive_bayes.fit(xTrain, yTrain.to_numpy().ravel())
     yHat = naive_bayes.predict(xTest)
-    print(yHat)
-    print(yTest)
+    print(naive_bayes)
     print("Number of mistakes on the test dataset")
     print(calc_mistakes(yHat, yTest.to_numpy()))
     print("Accuracy on test dataset")
     print(1 - calc_mistakes(yHat, yTest.to_numpy()) / len(yTest.to_numpy()))
 
+    print()
 
-    # print out the number of mistakes
-    # print("Number of mistakes on the test dataset")
-    # print(calc_mistakes(yHat, yTest))
-    # print("Accuracy on test dataset")
-    # print(1 - calc_mistakes(yHat, yTest) / len(yTest))
-    #
-    # weights_df = pd.DataFrame(model.weights, columns=pd.read_csv(args.xTrain).columns)
-    # sorted_df = weights_df.sort_values(by=0, axis=1, ascending=False)
-    # print("15 most positive weights")
-    # print(sorted_df.iloc[:, : 15])
-    # print("15 most negative weights")
-    # print(sorted_df.iloc[:, len(sorted_df.columns) - 15:])
+    logistic_regression = LogisticRegression(max_iter=1000)
+    logistic_regression.fit(xTrain, yTrain.to_numpy().ravel())
+    yHat = logistic_regression.predict(xTest)
+    print(logistic_regression)
+    print("Number of mistakes on the test dataset")
+    print(calc_mistakes(yHat, yTest.to_numpy()))
+    print("Accuracy on test dataset")
+    print(1 - calc_mistakes(yHat, yTest.to_numpy()) / len(yTest.to_numpy()))
+
 
 
 if __name__ == "__main__":

@@ -33,13 +33,11 @@ def model_assessment(filename):
 
 
 def build_vocab_map(xTrain):
-    # emails = open(filename).read()
-    # docs = emails.split("\n")
     vec = CountVectorizer(min_df=30).fit(xTrain['email'])
     bag_of_words = vec.transform(xTrain['email'])
     sum_words = bag_of_words.sum(axis=0)
     words_freq = [(word, sum_words[0, idx]) for word, idx in vec.vocabulary_.items()]
-    print("num words:", len(words_freq))
+    print("Number of words in vocab:", len(words_freq))
     return dict(words_freq)
 
 def construct_binary(vocab_counter, xTrain, xTest):
@@ -52,9 +50,6 @@ def construct_binary(vocab_counter, xTrain, xTest):
     vocabulary occurs in the email,
     or 0 otherwise
     """
-
-    print(xTrain)
-    # print(vocab_counter.keys())
     vec = CountVectorizer(vocabulary=vocab_counter.keys()).fit(xTrain["email"])
     bag_of_words = vec.transform(xTrain["email"])
     binary_Train = pd.DataFrame(bag_of_words.toarray())
@@ -64,10 +59,6 @@ def construct_binary(vocab_counter, xTrain, xTest):
     for col in binary_Train.columns:
         binary_Train.loc[binary_Train[col] >= 1, col] = 1
 
-    print(binary_Train)
-
-    pd.options.display.max_rows = 50
-    print(xTest)
     vec = CountVectorizer(vocabulary=vocab_counter.keys()).fit(xTest["email"])
     bag_of_words = vec.transform(xTest["email"])
     binary_Test= pd.DataFrame(bag_of_words.toarray())
@@ -76,8 +67,6 @@ def construct_binary(vocab_counter, xTrain, xTest):
 
     for col in binary_Test.columns:
         binary_Test.loc[binary_Test[col] >= 1, col] = 1
-
-    print(binary_Test)
 
     return binary_Train, binary_Test
 
@@ -92,23 +81,17 @@ def construct_count(vocab_counter, xTrain, xTest):
     vocabulary occurs in the email,
     or 0 otherwise
     """
-    print(xTrain)
     vec = CountVectorizer(vocabulary=vocab_counter.keys()).fit(xTrain["email"])
     bag_of_words = vec.transform(xTrain["email"])
     count_Train = pd.DataFrame(bag_of_words.toarray())
     count_Train.columns = vocab_counter.keys()
     count_Train.index = xTrain.index
-    print(count_Train)
 
-    # pd.options.display.max_rows = 50
-    print(xTest)
     vec = CountVectorizer(vocabulary=vocab_counter.keys()).fit(xTest["email"])
     bag_of_words = vec.transform(xTest["email"])
     count_Test = pd.DataFrame(bag_of_words.toarray())
     count_Test.columns = vocab_counter.keys()
     count_Test.index = xTest.index
-
-    print(count_Test)
 
     return count_Train, count_Test
 

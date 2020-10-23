@@ -1,11 +1,15 @@
 import argparse
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import time
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
 
 class Perceptron(object):
     mEpoch = 1000  # maximum epoch size
     weights = None       # weights of the perceptron
+    trainStats = {}
 
     def __init__(self, epoch):
         self.mEpoch = epoch
@@ -47,12 +51,10 @@ class Perceptron(object):
                         self.weights = self.weights + xFeat[index]
 
             stats[i] = num_wrong
-            if num_wrong == 0:
-                return stats
 
         return stats
 
-    def predict(self, xFeat, y):
+    def predict(self, xFeat):
         """
         Given the feature set xFeat, predict 
         what class the values will have.
@@ -111,6 +113,27 @@ def file_to_numpy(filename):
     return df.to_numpy()
 
 
+def holdout(model, xFeat, y, testSize):
+    before = time.time()
+    trainX, testX, trainY, testY = train_test_split(xFeat, y, shuffle=True, test_size=testSize)     # split data
+
+    model.trainStats = model.train(trainX, trainY)                                                  # fit data
+
+    yHatTrain = model.predict(trainX)                                                         # predict
+    yHatTest = model.predict(testX)
+    # calculate auc for training
+    fpr, tpr, thresholds = metrics.roc_curve(trainY,
+                                             yHatTrain)
+    trainAuc = metrics.auc(fpr, tpr)
+    # calculate auc for test dataset
+    fpr, tpr, thresholds = metrics.roc_curve(testY,
+                                             yHatTest)
+    testAuc = metrics.auc(fpr, tpr)                                                                 # return the AUC
+    after = time.time()
+    timeElapsed = after - before
+    return trainAuc, testAuc, timeElapsed
+
+
 def main():
     """
     Main file to run from the command line.
@@ -138,21 +161,28 @@ def main():
 
     np.random.seed(args.seed)   
     model = Perceptron(args.epoch)
-    trainStats = model.train(xTrain, yTrain)
-    print(trainStats)
-    yHat = model.predict(xTest, yTest)
     # print out the number of mistakes
-    print("Number of mistakes on the test dataset")
+    aucTrain1, aucVal1, time1 = holdout(model, xTrain, yTrain, 0.70)
+    yHat = model.predict(xTest)
+    print("Number of mistakes on the test dataset:")
     print(calc_mistakes(yHat, yTest))
-    print("Accuracy on test dataset")
-    print(1 - calc_mistakes(yHat, yTest)/len(yTest))
+    print("Accuracy on test dataset:")
+    print(1 - calc_mistakes(yHat, yTest) / len(yTest))
+    perfDF = pd.DataFrame([['Holdout', aucTrain1, aucVal1, time1]], columns=['Strategy', 'TrainAUC', 'ValAUC', 'Time'])
+    print("\n", perfDF, "\n")
 
     weights_df = pd.DataFrame(model.weights, columns=pd.read_csv(args.xTrain).columns)
     sorted_df = weights_df.sort_values(by=0, axis=1, ascending=False)
     print("15 most positive weights")
-    print(sorted_df.iloc[:, : 15])
+    print(sorted_df.iloc[:, : 15], "\n")
     print("15 most negative weights")
     print(sorted_df.iloc[:, len(sorted_df.columns) - 15:])
+
+    plt.plot(model.trainStats.keys(), model.trainStats.values())
+    plt.xlabel("Epoch")
+    plt.ylabel("Mistakes")
+    plt.ylim(bottom=-5)
+    plt.show()
 
 
 if __name__ == "__main__":
