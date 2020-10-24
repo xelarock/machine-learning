@@ -30,24 +30,24 @@ class Perceptron(object):
         stats : object
             Keys represent the epochs and values the number of mistakes
         """
-        self.weights = np.ones((1, len(xFeat[0])))
+        self.weights = np.ones((1, len(xFeat[0])))                      # initialize weights to 1
         stats = {}
 
-        for i in range(self.mEpoch):
+        for i in range(self.mEpoch):                                    # for each epoch
             print("Epoch: ", i)
             num_wrong = 0
-            for index in range(len(xFeat)):
-                prediction = np.dot(self.weights, xFeat[index])[0]
-                true_label = y[index][0]
-                if prediction >= 0:
+            for index in range(len(xFeat)):                             # for every sample
+                prediction = np.dot(self.weights, xFeat[index])[0]      # make prediction w * x
+                true_label = y[index][0]                                # get true label
+                if prediction >= 0:                                     # if prediction is positive than 1, else 0
                     prediction = 1
                 else:
                     prediction = 0
-                if prediction != true_label:
+                if prediction != true_label:                            # if wrong prediction
                     num_wrong += 1
-                    if true_label == 0:
+                    if true_label == 0:                                 # if mistake on 0, w' = w - x
                         self.weights = self.weights - xFeat[index]
-                    elif true_label > 0:
+                    elif true_label > 0:                                # if mistake on 1, w' = w + x
                         self.weights = self.weights + xFeat[index]
 
             stats[i] = num_wrong
@@ -70,9 +70,9 @@ class Perceptron(object):
             Predicted response per sample
         """
         yHat = []
-        for index in range(len(xFeat)):
-            prediction = np.dot(self.weights, xFeat[index])[0]
-            if prediction >= 0:
+        for index in range(len(xFeat)):                             # for each sample
+            prediction = np.dot(self.weights, xFeat[index])[0]      # make prediction
+            if prediction >= 0:                                     # if positive, prediction is 1, else, 0
                 prediction = 1
             else:
                 prediction = 0
@@ -99,7 +99,7 @@ def calc_mistakes(yHat, yTrue):
         The number of mistakes that are made
     """
     mistakes = 0
-    for index in range(len(yHat)):
+    for index in range(len(yHat)):                  # for each sample, count if prediction different from true label
         if yHat[index] != yTrue[index]:
             mistakes += 1
     return mistakes
@@ -114,24 +114,19 @@ def file_to_numpy(filename):
 
 
 def holdout(model, xFeat, y, testSize):
-    before = time.time()
     trainX, testX, trainY, testY = train_test_split(xFeat, y, shuffle=True, test_size=testSize)     # split data
 
     model.trainStats = model.train(trainX, trainY)                                                  # fit data
 
-    yHatTrain = model.predict(trainX)                                                         # predict
-    yHatTest = model.predict(testX)
+    yHatTrain = model.predict(trainX)                                                               # predict train
+    yHatTest = model.predict(testX)                                                                 # predict test
     # calculate auc for training
-    fpr, tpr, thresholds = metrics.roc_curve(trainY,
-                                             yHatTrain)
+    fpr, tpr, thresholds = metrics.roc_curve(trainY, yHatTrain)                                     # get auc curve
     trainAuc = metrics.auc(fpr, tpr)
     # calculate auc for test dataset
-    fpr, tpr, thresholds = metrics.roc_curve(testY,
-                                             yHatTest)
+    fpr, tpr, thresholds = metrics.roc_curve(testY,yHatTest)
     testAuc = metrics.auc(fpr, tpr)                                                                 # return the AUC
-    after = time.time()
-    timeElapsed = after - before
-    return trainAuc, testAuc, timeElapsed
+    return trainAuc, testAuc
 
 
 def main():
@@ -162,23 +157,23 @@ def main():
     np.random.seed(args.seed)   
     model = Perceptron(args.epoch)
     # print out the number of mistakes
-    aucTrain1, aucVal1, time1 = holdout(model, xTrain, yTrain, 0.70)
+    aucTrain1, aucVal1 = holdout(model, xTrain, yTrain, 0.70)                   # train model with holdout
     yHat = model.predict(xTest)
     print("Number of mistakes on the test dataset:")
     print(calc_mistakes(yHat, yTest))
     print("Accuracy on test dataset:")
-    print(1 - calc_mistakes(yHat, yTest) / len(yTest))
-    perfDF = pd.DataFrame([['Holdout', aucTrain1, aucVal1, time1]], columns=['Strategy', 'TrainAUC', 'ValAUC', 'Time'])
+    print(1 - calc_mistakes(yHat, yTest) / len(yTest))                          # print accuracy, and AUC's
+    perfDF = pd.DataFrame([['Holdout', aucTrain1, aucVal1]], columns=['Strategy', 'TrainAUC', 'ValAUC'])
     print("\n", perfDF, "\n")
 
-    weights_df = pd.DataFrame(model.weights, columns=pd.read_csv(args.xTrain).columns)
-    sorted_df = weights_df.sort_values(by=0, axis=1, ascending=False)
+    weights_df = pd.DataFrame(model.weights, columns=pd.read_csv(args.xTrain).columns)  # get weights of words as df
+    sorted_df = weights_df.sort_values(by=0, axis=1, ascending=False)                   # sort data
     print("15 most positive weights")
     print(sorted_df.iloc[:, : 15], "\n")
     print("15 most negative weights")
     print(sorted_df.iloc[:, len(sorted_df.columns) - 15:])
 
-    plt.plot(model.trainStats.keys(), model.trainStats.values())
+    plt.plot(model.trainStats.keys(), model.trainStats.values())                        # graph # of mistakes per epoch
     plt.xlabel("Epoch")
     plt.ylabel("Mistakes")
     plt.ylim(bottom=-5)

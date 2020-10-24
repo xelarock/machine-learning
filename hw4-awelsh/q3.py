@@ -3,10 +3,11 @@ from sklearn.linear_model import LogisticRegression
 import argparse
 import pandas as pd
 
-def calc_mistakes(yHat, yTrue):
+
+def calc_mistakes(yHat, yTrue):             # calculates the mistakes for each model
     mistakes = 0
-    for index in range(len(yHat)):
-        if yHat[index] != yTrue[index]:
+    for index in range(len(yHat)):          # for each sample
+        if yHat[index] != yTrue[index]:     # if prediction is wrong, count it as mistake
             mistakes += 1
     return mistakes
 
@@ -29,34 +30,34 @@ def main():
                         type=int, help="default seed number")
 
     args = parser.parse_args()
-    # load the train and test data assumes you'll use numpy
+    # load the train and test data as df's
 
     xTrain = pd.read_csv(args.xTrain)
     yTrain = pd.read_csv(args.yTrain)
     xTest = pd.read_csv(args.xTest)
     yTest = pd.read_csv(args.yTest)
-    if args.xTrain == "binary_Train.csv":
+    if args.xTrain == "binary_Train.csv":                   # if the inputs are binary, use BernoulliNB
         naive_bayes = BernoulliNB()
-    else:
+    else:                                                   # else use MultinomialNB
         naive_bayes = MultinomialNB()
-    naive_bayes.fit(xTrain, yTrain.to_numpy().ravel())
-    yHat = naive_bayes.predict(xTest)
+    naive_bayes.fit(xTrain, yTrain.to_numpy().ravel())      # fir to model
+    yHat = naive_bayes.predict(xTest)                       # predict labels
     print(naive_bayes)
     print("Number of mistakes on the test dataset")
-    print(calc_mistakes(yHat, yTest.to_numpy()))
+    print(calc_mistakes(yHat, yTest.to_numpy()))            # calculate mistakes
     print("Accuracy on test dataset")
-    print(1 - calc_mistakes(yHat, yTest.to_numpy()) / len(yTest.to_numpy()))
+    print(1 - calc_mistakes(yHat, yTest.to_numpy()) / len(yTest.to_numpy()))        # calculate accuracy
 
     print()
 
-    logistic_regression = LogisticRegression(max_iter=1000)
-    logistic_regression.fit(xTrain, yTrain.to_numpy().ravel())
-    yHat = logistic_regression.predict(xTest)
+    logistic_regression = LogisticRegression(max_iter=1000)                     # do logistic regression for 100 epochs
+    logistic_regression.fit(xTrain, yTrain.to_numpy().ravel())                  # fit test data
+    yHat = logistic_regression.predict(xTest)                                   # predict labels
     print(logistic_regression)
     print("Number of mistakes on the test dataset")
-    print(calc_mistakes(yHat, yTest.to_numpy()))
+    print(calc_mistakes(yHat, yTest.to_numpy()))                                # calculate number of mistakes
     print("Accuracy on test dataset")
-    print(1 - calc_mistakes(yHat, yTest.to_numpy()) / len(yTest.to_numpy()))
+    print(1 - calc_mistakes(yHat, yTest.to_numpy()) / len(yTest.to_numpy()))    # calculate accuracy
 
 
 
